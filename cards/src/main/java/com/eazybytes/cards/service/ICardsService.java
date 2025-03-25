@@ -1,6 +1,7 @@
 package com.eazybytes.cards.service;
 
 import com.eazybytes.cards.dto.CardsDto;
+import com.eazybytes.common.dto.MobileNumberUpdateDto;
 
 public interface ICardsService {
 
@@ -31,4 +32,6 @@ public interface ICardsService {
      */
     boolean deleteCard(Long cardNumber);
 
+
+    boolean updateMobileNumber(MobileNumberUpdateDto mobileNumberUpdateDto);
 }

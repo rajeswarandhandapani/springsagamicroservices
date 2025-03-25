@@ -1,5 +1,6 @@
 package com.eazybytes.loans.service.impl;
 
+import com.eazybytes.common.dto.MobileNumberUpdateDto;
 import com.eazybytes.loans.constants.LoansConstants;
 import com.eazybytes.loans.dto.LoansDto;
 import com.eazybytes.loans.entity.Loans;
@@ -9,6 +10,8 @@ import com.eazybytes.loans.mapper.LoansMapper;
 import com.eazybytes.loans.repository.LoansRepository;
 import com.eazybytes.loans.service.ILoansService;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -16,9 +19,11 @@ import java.util.Random;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class LoansServiceImpl implements ILoansService {
 
-    private LoansRepository loansRepository;
+    private final LoansRepository loansRepository;
+    private final StreamBridge streamBridge;
 
     /**
      * @param mobileNumber - Mobile Number of the Customer
@@ -91,4 +96,21 @@ public class LoansServiceImpl implements ILoansService {
     }
 
 
+    @Override
+    public boolean updateMobileNumber(MobileNumberUpdateDto mobileNumberUpdateDto) {
+        String currentMobileNumber = mobileNumberUpdateDto.getCurrentMobileNumber();
+        Loans loan = loansRepository.findByMobileNumberAndActiveSw(currentMobileNumber, true).orElseThrow(
+                () -> new ResourceNotFoundException("Card", "mobileNumber", currentMobileNumber)
+        );
+        loan.setMobileNumber(mobileNumberUpdateDto.getNewMobileNumber());
+        loansRepository.save(loan);
+        updateMobileNumberStatus(mobileNumberUpdateDto);
+        return true;
+    }
+
+    private void updateMobileNumberStatus(MobileNumberUpdateDto mobileNumberUpdateDto) {
+        log.info("Updating mobile number status for the request : {}", mobileNumberUpdateDto);
+        boolean send = streamBridge.send("updateMobileNumberStatus-out-0", mobileNumberUpdateDto);
+        log.info("mobile number status updated successfully for the request : {}", send);
+    }
 }

@@ -1,5 +1,6 @@
 package com.eazybytes.loans.service;
 
+import com.eazybytes.common.dto.MobileNumberUpdateDto;
 import com.eazybytes.loans.dto.LoansDto;
 
 public interface ILoansService {
@@ -31,4 +32,5 @@ public interface ILoansService {
      */
     boolean deleteLoan(Long loanNumber);
 
+    boolean updateMobileNumber(MobileNumberUpdateDto mobileNumberUpdateDto);
 }

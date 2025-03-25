@@ -8,7 +8,10 @@ import com.eazybytes.cards.exception.ResourceNotFoundException;
 import com.eazybytes.cards.mapper.CardsMapper;
 import com.eazybytes.cards.repository.CardsRepository;
 import com.eazybytes.cards.service.ICardsService;
+import com.eazybytes.common.dto.MobileNumberUpdateDto;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -16,9 +19,11 @@ import java.util.Random;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class CardsServiceImpl implements ICardsService {
 
-    private CardsRepository cardsRepository;
+    private final CardsRepository cardsRepository;
+    private final StreamBridge streamBridge;
 
     /**
      * @param mobileNumber - Mobile Number of the Customer
@@ -91,4 +96,21 @@ public class CardsServiceImpl implements ICardsService {
     }
 
 
+    @Override
+    public boolean updateMobileNumber(MobileNumberUpdateDto mobileNumberUpdateDto) {
+        String currentMobileNumber = mobileNumberUpdateDto.getCurrentMobileNumber();
+        Cards card = cardsRepository.findByMobileNumberAndActiveSw(currentMobileNumber, true).orElseThrow(
+                () -> new ResourceNotFoundException("Card", "mobileNumber", currentMobileNumber)
+        );
+        card.setMobileNumber(mobileNumberUpdateDto.getNewMobileNumber());
+        cardsRepository.save(card);
+        updateLoanMobileNumber(mobileNumberUpdateDto);
+        return true;
+    }
+
+    private void updateLoanMobileNumber(MobileNumberUpdateDto mobileNumberUpdateDto) {
+        log.info("Updating card mobile number for the request : {}", mobileNumberUpdateDto);
+        boolean send = streamBridge.send("updateLoanMobileNumber-out-0", mobileNumberUpdateDto);
+        log.info("card mobile number updated successfully for the request : {}", send);
+    }
 }
