@@ -1,0 +1,38 @@
+# IntelliJ IDEA specific files
+.idea/
+*.iml
+*.iws
+# Default ignored files
+/shelf/
+/workspace.xml
+# Editor-based HTTP Client requests
+/httpRequests/
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
+
+
+# Maven files
+target/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.out
+*.bak
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Generated files
+*.class
+*.jar
+*.war
+
+# Spring Boot specific files
+spring.log
+
+# Miscellaneous
+.vscode/
+.env
