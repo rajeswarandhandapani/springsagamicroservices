@@ -1,5 +1,6 @@
 package com.eazybytes.customer.service.impl;
 
+import com.eazybytes.common.dto.MobileNumberUpdateDto;
 import com.eazybytes.customer.constants.CustomerConstants;
 import com.eazybytes.customer.dto.CustomerDto;
 import com.eazybytes.customer.entity.Customer;
@@ -60,4 +61,14 @@ public class CustomerServiceImpl implements ICustomerService {
         return true;
     }
 
+    @Override
+    public boolean updateMobileNumber(MobileNumberUpdateDto mobileNumberUpdateDto) {
+        String currentMobileNumber = mobileNumberUpdateDto.getCurrentMobileNumber();
+        Customer customer = customerRepository.findByMobileNumberAndActiveSw(currentMobileNumber, true).orElseThrow(
+                () -> new ResourceNotFoundException("Customer", "mobileNumber", currentMobileNumber)
+        );
+        customer.setMobileNumber(mobileNumberUpdateDto.getNewMobileNumber());
+        customerRepository.save(customer);
+        return true;
+    }
 }
