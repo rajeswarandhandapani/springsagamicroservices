@@ -34,4 +34,7 @@ public interface ICardsService {
 
 
     boolean updateMobileNumber(MobileNumberUpdateDto mobileNumberUpdateDto);
+
+
+    boolean rollbackCardMobileNumber(MobileNumberUpdateDto mobileNumberUpdateDto);
 }

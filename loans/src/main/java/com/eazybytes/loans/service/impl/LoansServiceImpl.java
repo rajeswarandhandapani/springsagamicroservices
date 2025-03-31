@@ -9,10 +9,12 @@ import com.eazybytes.loans.exception.ResourceNotFoundException;
 import com.eazybytes.loans.mapper.LoansMapper;
 import com.eazybytes.loans.repository.LoansRepository;
 import com.eazybytes.loans.service.ILoansService;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.interceptor.TransactionAspectSupport;
 
 import java.util.Optional;
 import java.util.Random;
@@ -97,20 +99,38 @@ public class LoansServiceImpl implements ILoansService {
 
 
     @Override
+    @Transactional
     public boolean updateMobileNumber(MobileNumberUpdateDto mobileNumberUpdateDto) {
-        String currentMobileNumber = mobileNumberUpdateDto.getCurrentMobileNumber();
-        Loans loan = loansRepository.findByMobileNumberAndActiveSw(currentMobileNumber, true).orElseThrow(
-                () -> new ResourceNotFoundException("Card", "mobileNumber", currentMobileNumber)
-        );
-        loan.setMobileNumber(mobileNumberUpdateDto.getNewMobileNumber());
-        loansRepository.save(loan);
-        updateMobileNumberStatus(mobileNumberUpdateDto);
-        return true;
+        boolean result = false;
+
+        try {
+            String currentMobileNumber = mobileNumberUpdateDto.getCurrentMobileNumber();
+            Loans loan = loansRepository.findByMobileNumberAndActiveSw(currentMobileNumber, true).orElseThrow(
+                    () -> new ResourceNotFoundException("Card", "mobileNumber", currentMobileNumber)
+            );
+            loan.setMobileNumber(mobileNumberUpdateDto.getNewMobileNumber());
+            loansRepository.save(loan);
+
+            throw new RuntimeException("Simulating an error");
+//            updateMobileNumberStatus(mobileNumberUpdateDto);
+//            result = true;
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+            rollbackCardMobileNumber(mobileNumberUpdateDto);
+        }
+        return result;
     }
 
     private void updateMobileNumberStatus(MobileNumberUpdateDto mobileNumberUpdateDto) {
         log.info("Updating mobile number status for the request : {}", mobileNumberUpdateDto);
         boolean send = streamBridge.send("updateMobileNumberStatus-out-0", mobileNumberUpdateDto);
         log.info("mobile number status updated successfully for the request : {}", send);
+    }
+
+    private void rollbackCardMobileNumber(MobileNumberUpdateDto mobileNumberUpdateDto) {
+        log.info("Rollback mobile number status for the request : {}", mobileNumberUpdateDto);
+        boolean send = streamBridge.send("rollbackCardMobileNumber-out-0", mobileNumberUpdateDto);
+        log.info("Rollback number status updated successfully for the request : {}", send);
     }
 }

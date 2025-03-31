@@ -9,6 +9,7 @@ import com.eazybytes.customer.exception.ResourceNotFoundException;
 import com.eazybytes.customer.mapper.CustomerMapper;
 import com.eazybytes.customer.repository.CustomerRepository;
 import com.eazybytes.customer.service.ICustomerService;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.stream.function.StreamBridge;
@@ -66,6 +67,7 @@ public class CustomerServiceImpl implements ICustomerService {
     }
 
     @Override
+    @Transactional
     public boolean updateMobileNumber(MobileNumberUpdateDto mobileNumberUpdateDto) {
         String currentMobileNumber = mobileNumberUpdateDto.getCurrentMobileNumber();
         Customer customer = customerRepository.findByMobileNumberAndActiveSw(currentMobileNumber, true).orElseThrow(
@@ -82,5 +84,16 @@ public class CustomerServiceImpl implements ICustomerService {
         log.info("Updating account mobile number for the request : {}", mobileNumberUpdateDto);
         boolean send = streamBridge.send("updateAccountMobileNumber-out-0", mobileNumberUpdateDto);
         log.info("Account mobile number updated successfully for the request : {}", send);
+    }
+
+    @Override
+    public boolean rollbackCustomerMobileNumber(MobileNumberUpdateDto mobileNumberUpdateDto) {
+        String newMobileNumber = mobileNumberUpdateDto.getNewMobileNumber();
+        Customer customer = customerRepository.findByMobileNumberAndActiveSw(newMobileNumber, true).orElseThrow(
+                () -> new ResourceNotFoundException("Customer", "mobileNumber", newMobileNumber)
+        );
+        customer.setMobileNumber(mobileNumberUpdateDto.getCurrentMobileNumber());
+        customerRepository.save(customer);
+        return true;
     }
 }

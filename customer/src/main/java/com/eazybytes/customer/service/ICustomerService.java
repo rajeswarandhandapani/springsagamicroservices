@@ -30,4 +30,7 @@ public interface ICustomerService {
 
 
     boolean updateMobileNumber(MobileNumberUpdateDto mobileNumberUpdateDto);
+
+
+    boolean rollbackCustomerMobileNumber(MobileNumberUpdateDto mobileNumberUpdateDto);
 }

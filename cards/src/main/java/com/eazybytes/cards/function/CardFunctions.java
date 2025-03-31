@@ -19,4 +19,12 @@ public class CardFunctions {
             cardsService.updateMobileNumber(mobileNumberUpdateDto);
         };
     }
+
+    @Bean
+    public Consumer<MobileNumberUpdateDto> rollbackCardMobileNumber(ICardsService cardsService) {
+        return (mobileNumberUpdateDto) -> {
+            log.info("Rollback update Mobile Number for Card: {}", mobileNumberUpdateDto);
+            cardsService.rollbackCardMobileNumber(mobileNumberUpdateDto);
+        };
+    }
 }

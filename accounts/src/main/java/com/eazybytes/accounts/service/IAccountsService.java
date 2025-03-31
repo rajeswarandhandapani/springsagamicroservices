@@ -35,4 +35,6 @@ public interface IAccountsService {
 
     boolean updateMobileNumber(MobileNumberUpdateDto mobileNumberUpdateDto);
 
+
+    boolean rollbackMobileNumber(MobileNumberUpdateDto mobileNumberUpdateDto);
 }
