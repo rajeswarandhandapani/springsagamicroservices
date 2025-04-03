@@ -27,7 +27,7 @@ import org.springframework.beans.BeanUtils;
 import java.util.List;
 import java.util.Optional;
 
-@Aggregate
+@Aggregate(snapshotTriggerDefinition = "customerSnapshotTriggerDefinition")
 public class CustomerAggregate {
 
     @AggregateIdentifier
