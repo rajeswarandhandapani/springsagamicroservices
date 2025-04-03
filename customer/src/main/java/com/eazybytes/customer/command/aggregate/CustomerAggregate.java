@@ -1,5 +1,11 @@
 package com.eazybytes.customer.command.aggregate;
 
+import com.eazybytes.common.command.RollbackAccntMobNumCommand;
+import com.eazybytes.common.command.RollbackCusMobNumCommand;
+import com.eazybytes.common.command.UpdateCusMobNumCommand;
+import com.eazybytes.common.event.AccntMobNumRollbackedEvent;
+import com.eazybytes.common.event.CusMobNumRollbackedEvent;
+import com.eazybytes.common.event.CusMobNumUpdatedEvent;
 import com.eazybytes.customer.command.CreateCustomerCommand;
 import com.eazybytes.customer.command.DeleteCustomerCommand;
 import com.eazybytes.customer.command.UpdateCustomerCommand;
@@ -30,6 +36,7 @@ public class CustomerAggregate {
     private String email;
     private String mobileNumber;
     private boolean activeSw;
+    private String errorMsg;
 
     public CustomerAggregate() {
 
@@ -37,12 +44,6 @@ public class CustomerAggregate {
 
     @CommandHandler
     public CustomerAggregate(CreateCustomerCommand createCustomerCommand, CustomerRepository customerRepository) {
-        /*Optional<Customer> optionalCustomer = customerRepository.
-                findByMobileNumberAndActiveSw(createCustomerCommand.getMobileNumber(), true);
-        if (optionalCustomer.isPresent()) {
-            throw new CustomerAlreadyExistsException("Customer already registered with given mobileNumber "
-                    + createCustomerCommand.getMobileNumber());
-        }*/
         CustomerCreatedEvent customerCreatedEvent = new CustomerCreatedEvent();
         BeanUtils.copyProperties(createCustomerCommand, customerCreatedEvent);
         AggregateLifecycle.apply(customerCreatedEvent);
@@ -59,10 +60,6 @@ public class CustomerAggregate {
 
     @CommandHandler
     public void handle(UpdateCustomerCommand updateCustomerCommand, EventStore eventStore) {
-        /*List<?>   commands = eventStore.readEvents(updateCustomerCommand.getCustomerId()).asStream().toList();
-        if(commands.isEmpty()) {
-            throw new ResourceNotFoundException("Customer", "customerId", updateCustomerCommand.getCustomerId());
-        }*/
         CustomerUpdatedEvent customerUpdatedEvent = new CustomerUpdatedEvent();
         BeanUtils.copyProperties(updateCustomerCommand, customerUpdatedEvent);
         AggregateLifecycle.apply(customerUpdatedEvent);
@@ -84,6 +81,31 @@ public class CustomerAggregate {
     @EventSourcingHandler
     public void on(CustomerDeletedEvent customerDeletedEvent) {
         this.activeSw = customerDeletedEvent.isActiveSw();
+    }
+
+    @CommandHandler
+    public void handle(UpdateCusMobNumCommand updateCusMobNumCommand) {
+        CusMobNumUpdatedEvent cusMobNumUpdatedEvent = new CusMobNumUpdatedEvent();
+        BeanUtils.copyProperties(updateCusMobNumCommand, cusMobNumUpdatedEvent);
+        AggregateLifecycle.apply(cusMobNumUpdatedEvent);
+    }
+
+    @EventSourcingHandler
+    public void on(CusMobNumUpdatedEvent cusMobNumUpdatedEvent) {
+        this.mobileNumber = cusMobNumUpdatedEvent.getNewMobileNumber();
+    }
+
+    @CommandHandler
+    public void handle(RollbackCusMobNumCommand rollbackCusMobNumCommand) {
+        CusMobNumRollbackedEvent cusMobNumRollbackedEvent = new CusMobNumRollbackedEvent();
+        BeanUtils.copyProperties(rollbackCusMobNumCommand, cusMobNumRollbackedEvent);
+        AggregateLifecycle.apply(cusMobNumRollbackedEvent);
+    }
+
+    @EventSourcingHandler
+    public void on(CusMobNumRollbackedEvent cusMobNumRollbackedEvent) {
+        this.mobileNumber = cusMobNumRollbackedEvent.getMobileNumber();
+        this.errorMsg = cusMobNumRollbackedEvent.getErrorMsg();
     }
 
 }

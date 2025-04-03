@@ -75,5 +75,14 @@ public class AccountsServiceImpl  implements IAccountsService {
         return true;
     }
 
+    @Override
+    public boolean updateMobileNumber(String oldMobileNumber, String newMobileNumber) {
+        Accounts account = accountsRepository.findByMobileNumberAndActiveSw(oldMobileNumber,
+                AccountsConstants.ACTIVE_SW).orElseThrow(() -> new ResourceNotFoundException("Account", "mobileNumber", oldMobileNumber));
+        account.setMobileNumber(newMobileNumber);
+        accountsRepository.save(account);
+        return true;
+    }
+
 
 }
